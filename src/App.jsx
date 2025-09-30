@@ -302,7 +302,7 @@ export default function App() {
           transition={{ duration: 0.8 }}
           className="bg-yellow-200 dark:bg-yellow-600 text-yellow-800 dark:text-yellow-100 px-4 py-2 rounded-full inline-block mb-6 font-semibold shadow-md"
         >
-          Proudly Made by Shaikh Aliakbar, Roll No. 6! 🚀
+          Proudly Made by Shaikh Aliakbar, Roll No. 6 (Sycs 2025)! 🚀
         </motion.div>
         <motion.h2
           initial={{ opacity: 0, scale: 0.8 }}
