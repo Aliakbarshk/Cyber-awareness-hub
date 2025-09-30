@@ -2,8 +2,24 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import zxcvbn from "zxcvbn";
 import Confetti from "react-confetti";
+import { SunIcon, MoonIcon, MenuIcon, XIcon } from "lucide-react";
 
 export default function App() {
+  // Dark Mode State
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return (
+      savedTheme === "dark" ||
+      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
+
   // Quiz State
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizScore, setQuizScore] = useState(null);
@@ -79,12 +95,12 @@ export default function App() {
   }, [playBuzzer]);
 
   const handleQuizAnswer = (id, selected) => {
-    console.log(`Clicked question ${id}, option ${selected}`); // Debug log
+    console.log(`Clicked question ${id}, option ${selected}`);
     setQuizAnswers((prev) => ({ ...prev, [id]: selected }));
   };
 
   const submitQuiz = () => {
-    console.log("Submitting quiz:", quizAnswers); // Debug log
+    console.log("Submitting quiz:", quizAnswers);
     const score = quizQuestions.reduce(
       (acc, q) => acc + (quizAnswers[q.id] === q.correct ? 1 : 0),
       0
@@ -92,7 +108,7 @@ export default function App() {
     setQuizScore(score);
     if (score < quizQuestions.length) {
       setPlayBuzzer(true);
-      setTimeout(() => setPlayBuzzer(false), 300); // Reset buzzer
+      setTimeout(() => setPlayBuzzer(false), 300);
     }
     if (score === quizQuestions.length) {
       setShowConfetti(true);
@@ -101,7 +117,7 @@ export default function App() {
   };
 
   const resetQuiz = () => {
-    console.log("Resetting quiz"); // Debug log
+    console.log("Resetting quiz");
     setQuizAnswers({});
     setQuizScore(null);
     setPlayBuzzer(false);
@@ -145,7 +161,7 @@ export default function App() {
         setLinkResult({ safe: true, message: "No threats detected!" });
       }
     } catch (error) {
-      console.error("Link checker error:", error); // Debug log
+      console.error("Link checker error:", error);
       setLinkResult({
         safe: Math.random() > 0.5 ? true : false,
         message: "Demo mode: Random result (get API key for real checks)",
@@ -199,44 +215,73 @@ export default function App() {
   };
 
   const getFeedbackColor = (q, selected) => {
-    if (selected === undefined) return "bg-indigo-50 border-transparent";
+    if (selected === undefined)
+      return "bg-indigo-50 dark:bg-gray-700 border-transparent";
     return selected === q.correct
-      ? "bg-green-100 border-green-500"
-      : "bg-red-100 border-red-500";
+      ? "bg-green-100 dark:bg-green-800 border-green-500"
+      : "bg-red-100 dark:bg-red-800 border-red-500";
   };
 
   const getOptionColor = (q, idx, selected) => {
     if (selected === undefined)
-      return "bg-white border-gray-300 hover:bg-gray-50";
+      return "bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500";
     if (idx === q.correct) return "bg-green-500 text-white";
     if (selected === idx) return "bg-red-500 text-white";
-    return "bg-white border-gray-300";
+    return "bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300">
       {showConfetti && <Confetti />}
-      {/* Header */}
-      <header className="bg-indigo-800 text-white shadow-lg sticky top-0 z-50">
-        <nav className="container mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center">
+      {/* Navbar */}
+      <header className="bg-indigo-800 dark:bg-gray-900 text-white shadow-md sticky top-0 z-50">
+        <nav className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-xl sm:text-2xl font-bold"
+            transition={{ duration: 0.5 }}
+            className="text-lg sm:text-xl font-bold"
           >
             Cyber Awareness Hub
           </motion.h1>
-          <ul className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6 mt-4 sm:mt-0">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? <SunIcon size={20} /> : <MoonIcon size={20} />}
+            </motion.button>
+            <motion.button
+              className="sm:hidden p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
+            </motion.button>
+          </div>
+          <ul
+            className={`sm:flex sm:space-x-6 ${
+              menuOpen
+                ? "block absolute top-14 left-0 w-full bg-indigo-800 dark:bg-gray-900 p-4 shadow-md"
+                : "hidden sm:block"
+            }`}
+          >
             {["Home", "Threats", "Tips", "Quiz", "Tools"].map((item) => (
               <motion.li
                 key={item}
-                whileHover={{ scale: 1.1, rotate: 2 }}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 300 }}
+                className="my-2 sm:my-0"
               >
                 <a
                   href={`#${item.toLowerCase()}`}
-                  className="hover:text-indigo-300 transition-all duration-300 relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-indigo-300 after:transition-all hover:after:w-full"
+                  className="block px-4 py-2 sm:px-2 sm:py-1 text-white hover:text-indigo-200 dark:hover:text-indigo-300 transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-indigo-200 dark:after:bg-indigo-300 after:transition-all hover:after:w-full"
+                  onClick={() => setMenuOpen(false)}
                 >
                   {item}
                 </a>
@@ -255,7 +300,7 @@ export default function App() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-full inline-block mb-6 font-semibold shadow-md"
+          className="bg-yellow-200 dark:bg-yellow-600 text-yellow-800 dark:text-yellow-100 px-4 py-2 rounded-full inline-block mb-6 font-semibold shadow-md"
         >
           Proudly Made by Shaikh Aliakbar, Roll No. 6! 🚀
         </motion.div>
@@ -263,7 +308,7 @@ export default function App() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-indigo-900 mb-6"
+          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-indigo-900 dark:text-indigo-200 mb-6"
         >
           Stay Safe in the Digital World
         </motion.h2>
@@ -271,7 +316,7 @@ export default function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-          className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8"
+          className="text-base sm:text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-8"
         >
           Learn about cyber threats and how to protect yourself online.
           Knowledge is your best defense!
@@ -281,21 +326,24 @@ export default function App() {
           whileTap={{ scale: 0.95 }}
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ repeat: Infinity, duration: 2 }}
-          className="bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-indigo-700 transition-colors"
+          className="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all duration-300"
         >
           Get Started
         </motion.button>
       </section>
 
       {/* Threats Section */}
-      <section id="threats" className="bg-white py-12 sm:py-16">
+      <section
+        id="threats"
+        className="bg-white dark:bg-gray-800 py-12 sm:py-16"
+      >
         <div className="container mx-auto px-4 sm:px-6">
           <motion.h3
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-2xl sm:text-3xl font-bold text-indigo-900 mb-8 sm:mb-10 text-center"
+            className="text-2xl sm:text-3xl font-bold text-indigo-900 dark:text-indigo-200 mb-8 sm:mb-10 text-center"
           >
             Common Cyber Threats
           </motion.h3>
@@ -320,17 +368,13 @@ export default function App() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.2, duration: 0.6 }}
-                whileHover={{
-                  rotate: 1,
-                  scale: 1.02,
-                  transition: { duration: 0.3 },
-                }}
-                className="bg-indigo-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer"
+                whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
+                className="bg-indigo-50 dark:bg-gray-700 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
               >
-                <h4 className="text-lg sm:text-xl font-semibold text-indigo-800 mb-4">
+                <h4 className="text-lg sm:text-xl font-semibold text-indigo-800 dark:text-indigo-300 mb-4">
                   {threat.title}
                 </h4>
-                <p className="text-gray-600 text-sm sm:text-base">
+                <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                   {threat.desc}
                 </p>
               </motion.div>
@@ -340,14 +384,17 @@ export default function App() {
       </section>
 
       {/* Tips Section */}
-      <section id="tips" className="bg-indigo-50 py-12 sm:py-16">
+      <section
+        id="tips"
+        className="bg-indigo-50 dark:bg-gray-700 py-12 sm:py-16"
+      >
         <div className="container mx-auto px-4 sm:px-6">
           <motion.h3
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-2xl sm:text-3xl font-bold text-indigo-900 mb-8 sm:mb-10 text-center"
+            className="text-2xl sm:text-3xl font-bold text-indigo-900 dark:text-indigo-200 mb-8 sm:mb-10 text-center"
           >
             Tips for Staying Safe Online
           </motion.h3>
@@ -365,11 +412,13 @@ export default function App() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                whileHover={{ x: 10, color: "#4f46e5" }}
+                whileHover={{ x: 10, color: darkMode ? "#a5b4fc" : "#4f46e5" }}
                 className="flex items-start cursor-pointer"
               >
-                <span className="text-indigo-600 mr-3 sm:mr-4 text-lg">✔️</span>
-                <span className="text-gray-700 text-sm sm:text-base">
+                <span className="text-indigo-600 dark:text-indigo-400 mr-3 sm:mr-4 text-lg">
+                  ✔️
+                </span>
+                <span className="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
                   {tip}
                 </span>
               </motion.li>
@@ -379,14 +428,14 @@ export default function App() {
       </section>
 
       {/* Interactive Quiz Section */}
-      <section id="quiz" className="bg-white py-12 sm:py-16">
+      <section id="quiz" className="bg-white dark:bg-gray-800 py-12 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6">
           <motion.h3
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-2xl sm:text-3xl font-bold text-indigo-900 mb-8 sm:mb-10 text-center"
+            className="text-2xl sm:text-3xl font-bold text-indigo-900 dark:text-indigo-200 mb-8 sm:mb-10 text-center"
           >
             Test Your Knowledge - Fun Interactive Quiz! 🎉
           </motion.h3>
@@ -401,7 +450,7 @@ export default function App() {
                 className={`mb-8 p-4 sm:p-6 rounded-lg border-2 ${getFeedbackColor(
                   q,
                   quizAnswers[q.id]
-                )}`}
+                )} shadow-lg`}
               >
                 <p className="font-semibold mb-4 text-sm sm:text-base">
                   {q.question}
@@ -421,15 +470,15 @@ export default function App() {
                           : {}
                       }
                       transition={{ duration: 0.3 }}
-                      className={`w-full p-2 sm:p-3 rounded text-left transition-colors disabled:cursor-not-allowed ${getOptionColor(
+                      className={`w-full p-2 sm:p-3 rounded text-left transition-all disabled:cursor-not-allowed ${getOptionColor(
                         q,
                         idx,
                         quizAnswers[q.id]
                       )} ${
                         quizAnswers[q.id] === idx
-                          ? "border-2 border-indigo-500"
+                          ? "border-2 border-indigo-500 dark:border-indigo-400"
                           : ""
-                      }`}
+                      } shadow-sm hover:shadow-md`}
                     >
                       {opt}
                     </motion.button>
@@ -450,13 +499,13 @@ export default function App() {
                       >
                         😢
                       </motion.span>
-                      <p className="text-red-600 text-sm">
+                      <p className="text-red-600 dark:text-red-400 text-sm">
                         Wrong! Correct is: {q.options[q.correct]}
                       </p>
                     </motion.div>
                   )}
                   {quizScore !== null && (
-                    <p className="mt-2 text-gray-600 text-sm italic">
+                    <p className="mt-2 text-gray-600 dark:text-gray-300 text-sm italic">
                       {q.explanation}
                     </p>
                   )}
@@ -469,7 +518,7 @@ export default function App() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={submitQuiz}
-                  className="block mx-auto bg-indigo-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold"
+                  className="block mx-auto bg-indigo-600 dark:bg-indigo-500 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition-all"
                 >
                   Submit Quiz
                 </motion.button>
@@ -480,12 +529,12 @@ export default function App() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="text-center mt-8 p-4 sm:p-6 bg-green-50 rounded-lg"
+                  className="text-center mt-8 p-4 sm:p-6 bg-green-50 dark:bg-green-900 rounded-lg shadow-lg"
                 >
-                  <h4 className="text-xl sm:text-2xl font-bold text-green-800 mb-4">
+                  <h4 className="text-xl sm:text-2xl font-bold text-green-800 dark:text-green-200 mb-4">
                     Score: {quizScore}/{quizQuestions.length} 🏆
                   </h4>
-                  <p className="text-green-700 text-sm sm:text-base">
+                  <p className="text-green-700 dark:text-green-300 text-sm sm:text-base">
                     {quizScore === quizQuestions.length
                       ? "Perfect! You're a cyber pro! 🎊"
                       : quizScore > quizQuestions.length / 2
@@ -496,7 +545,7 @@ export default function App() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={resetQuiz}
-                    className="mt-4 bg-indigo-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold"
+                    className="mt-4 bg-indigo-600 dark:bg-indigo-500 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition-all"
                   >
                     Try Again
                   </motion.button>
@@ -508,13 +557,16 @@ export default function App() {
       </section>
 
       {/* Tools Section */}
-      <section id="tools" className="bg-indigo-50 py-12 sm:py-16">
+      <section
+        id="tools"
+        className="bg-indigo-50 dark:bg-gray-700 py-12 sm:py-16"
+      >
         <div className="container mx-auto px-4 sm:px-6">
           <motion.h3
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-2xl sm:text-3xl font-bold text-indigo-900 mb-8 sm:mb-10 text-center"
+            className="text-2xl sm:text-3xl font-bold text-indigo-900 dark:text-indigo-200 mb-8 sm:mb-10 text-center"
           >
             Cyber Tools - Detect Scams Now!
           </motion.h3>
@@ -523,9 +575,9 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              className="bg-white p-4 sm:p-6 rounded-lg shadow-md"
+              className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
             >
-              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800">
+              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800 dark:text-indigo-300">
                 🔗 Link Checker
               </h4>
               <input
@@ -533,14 +585,14 @@ export default function App() {
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="Enter URL to check..."
-                className="w-full p-2 border border-gray-300 rounded mb-4 text-sm sm:text-base"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-4 text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={checkLink}
                 disabled={checkingLink}
-                className="w-full bg-indigo-600 text-white py-2 rounded font-semibold disabled:opacity-50"
+                className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-2 rounded font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               >
                 {checkingLink ? "Checking..." : "Check Safety"}
               </motion.button>
@@ -551,8 +603,8 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`mt-4 p-3 rounded text-sm sm:text-base ${
                       linkResult.safe
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
+                        : "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
                     }`}
                   >
                     {linkResult.safe
@@ -569,9 +621,9 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              className="bg-white p-4 sm:p-6 rounded-lg shadow-md"
+              className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
             >
-              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800">
+              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800 dark:text-indigo-300">
                 🔑 Password Strength
               </h4>
               <input
@@ -582,11 +634,11 @@ export default function App() {
                   checkPassword();
                 }}
                 placeholder="Enter password..."
-                className="w-full p-2 border border-gray-300 rounded mb-4 text-sm sm:text-base"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-4 text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
                 <div
-                  className={`h-2 rounded-full transition-all duration-300`}
+                  className="h-2 rounded-full transition-all duration-300"
                   style={{
                     width: `${(passResult?.score || 0) * 25}%`,
                     backgroundColor: strengthColor(passResult?.score || 0),
@@ -600,7 +652,7 @@ export default function App() {
                 </p>
               )}
               {passResult?.suggestions.length > 0 && (
-                <ul className="mt-2 text-xs text-gray-600 space-y-1">
+                <ul className="mt-2 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                   {passResult.suggestions.slice(0, 2).map((s, i) => (
                     <li key={i}>• {s}</li>
                   ))}
@@ -612,22 +664,22 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              className="bg-white p-4 sm:p-6 rounded-lg shadow-md"
+              className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
             >
-              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800">
+              <h4 className="text-lg sm:text-xl font-semibold mb-4 text-indigo-800 dark:text-indigo-300">
                 📧 Email Scam Analyzer
               </h4>
               <textarea
                 value={emailText}
                 onChange={(e) => setEmailText(e.target.value)}
                 placeholder="Paste email body here..."
-                className="w-full p-2 border border-gray-300 rounded mb-4 h-24 text-sm sm:text-base"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-4 h-24 text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={analyzeEmail}
-                className="w-full bg-indigo-600 text-white py-2 rounded font-semibold"
+                className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-2 rounded font-semibold shadow-md hover:shadow-lg transition-all"
               >
                 Analyze for Scams
               </motion.button>
@@ -636,9 +688,9 @@ export default function App() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-3 bg-yellow-100 rounded text-sm sm:text-base"
+                    className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-800 rounded text-sm sm:text-base text-yellow-800 dark:text-yellow-200"
                   >
-                    <ul className="text-yellow-800 space-y-1">
+                    <ul className="space-y-1">
                       {emailFlags.map((flag, i) => (
                         <li key={i}>⚠️ {flag}</li>
                       ))}
@@ -652,7 +704,7 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-indigo-800 text-white py-6">
+      <footer className="bg-indigo-800 dark:bg-gray-900 text-white py-6">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <p className="text-sm sm:text-base">
             &copy; 2025 Cyber Awareness Hub. Created by Shaikh Aliakbar, Roll
